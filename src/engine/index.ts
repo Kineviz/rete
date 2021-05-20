@@ -109,7 +109,6 @@ export class Engine extends Context<EventsTypes> {
             const conns = input.connections;
             const connData = await Promise.all(conns.map(async (c) => {
                 const prevNode = <EngineNode> (this.data as Data).nodes[c.node];
-                debugger
                 if(prevNode.busy){
                     this.unlock(prevNode)
                     // this.abort()
@@ -222,7 +221,6 @@ export class Engine extends Context<EventsTypes> {
             const node = data.nodes[i] as EngineNode;
 
             if (typeof node.outputData === 'undefined') {
-                debugger
                 await this.processNode(node);
                 await this.forwardProcess(node);
             }
