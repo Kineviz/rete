@@ -18,9 +18,12 @@ export class Output extends IO {
         if (!this.socket.compatibleWith(input.socket))
             throw new Error('Sockets not compatible');
         if (!input.multipleConnections && input.hasConnection())
-            throw new Error('Input already has one connection');
-        if (!this.multipleConnections && this.hasConnection())
-            throw new Error('Output already has one connection');
+        {
+            return null
+        }
+        if (!this.multipleConnections && this.hasConnection()){
+            return null
+        }
 
         const connection = new Connection(this, input);
 

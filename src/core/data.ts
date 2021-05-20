@@ -25,6 +25,7 @@ export interface NodeData {
     name: string;
     inputs: InputsData;
     outputs: OutputsData;
+    visited?:boolean;
     data: {[key: string]: unknown};
     position: [number, number];
 }

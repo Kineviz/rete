@@ -108,8 +108,13 @@ export class Engine extends Context<EventsTypes> {
             const input = node.inputs[key];
             const conns = input.connections;
             const connData = await Promise.all(conns.map(async (c) => {
-                const prevNode = (this.data as Data).nodes[c.node];
-
+                const prevNode = <EngineNode> (this.data as Data).nodes[c.node];
+                debugger
+                if(prevNode.busy){
+                    this.unlock(prevNode)
+                    // this.abort()
+                    return prevNode.outputData
+                }
                 const outputs = await this.processNode(prevNode as EngineNode);
 
                 if (!outputs) 
@@ -156,14 +161,17 @@ export class Engine extends Context<EventsTypes> {
     private async forwardProcess(node: NodeData) {
         if (this.state === State.ABORT)
             return null;
-
         return await Promise.all(Object.keys(node.outputs).map(async (key) => {
             const output = node.outputs[key];
             
             return await Promise.all(output.connections.map(async (c) => {
-                const nextNode = (this.data as Data).nodes[c.node];
-
+                const nextNode = <EngineNode> (this.data as Data).nodes[c.node];
                 await this.processNode(nextNode as EngineNode);
+                if(nextNode.visited){
+                    // this.abort()
+                    return null
+                }
+                node.visited = true
                 await this.forwardProcess(nextNode);
             }));
         }));
@@ -181,15 +189,15 @@ export class Engine extends Context<EventsTypes> {
 
     async validate(data: Data) {
         const checking = Validator.validate(this.id, data);
-        const recursion = new Recursion(data.nodes);
+        // const recursion = new Recursion(data.nodes);
 
-        if (!checking.success)
-            return await this.throwError(checking.msg);  
+        // if (!checking.success)
+        //     return await this.throwError(checking.msg);  
         
-        const recurrentNode = recursion.detect();
+        // const recurrentNode = recursion.detect();
 
-        if (recurrentNode)
-            return await this.throwError('Recursion detected', recurrentNode);      
+        // if (recurrentNode)
+        //     return await this.throwError('Recursion detected', recurrentNode);      
          
         return true;
     }
@@ -206,6 +214,7 @@ export class Engine extends Context<EventsTypes> {
         await this.forwardProcess(startNode);
     }
 
+
     private async processUnreachable() {
         const data = this.data as Data;
 
@@ -213,9 +222,11 @@ export class Engine extends Context<EventsTypes> {
             const node = data.nodes[i] as EngineNode;
 
             if (typeof node.outputData === 'undefined') {
+                debugger
                 await this.processNode(node);
                 await this.forwardProcess(node);
             }
+            node.visited = false
         }
     }
 
